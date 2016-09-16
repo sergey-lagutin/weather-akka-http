@@ -2,16 +2,12 @@ package task
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.Future
 
-/**
-  * Minimal solution
-  */
 object Main extends App {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
@@ -20,22 +16,26 @@ object Main extends App {
 
   val route =
     get {
-        path("forecast" / Rest) { city =>
+        path("forecast" / Remaining) { city =>
           complete(service.getWeek(city))
         } ~
-        path("weather" / Rest) { city =>
+        path("weather" / Remaining) { city =>
           complete(service.getDay(city))
         } ~
-        path(Rest) { _ =>
+        path(Remaining) { _ =>
           complete {
-            <html>
-              <body>Use:
-                <ul>
-                  <li>weather/&lt;city&gt; - current weather</li>
-                  <li>forecast/&lt;city&gt; - week forecast</li>
-                </ul>
-              </body>
-            </html>
+            val help =
+              """
+                | <html>
+                | <body>Use:
+                |   <ul>
+                |     <li>weather/&lt;city&gt; - current weather</li>
+                |     <li>forecast/&lt;city&gt; - week forecast</li>
+                |   </ul>
+                | </body>
+                | </html>
+              """.stripMargin
+            Future.successful(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, help)))
           }
         }
     }
